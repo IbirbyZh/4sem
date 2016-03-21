@@ -88,11 +88,14 @@ void test(int readersCount, int writersCount){
     }
     for(i = 0; i < writersCount; ++i){
         myWriters[i]->join();
+        delete myWriters[i];
     }
     input.finalize();
     for(i = 0; i < readersCount; ++i){
         myWait[i]->join();
+        delete myWait[i];
         myNoWait[i]->join();
+        delete myNoWait[i];
     }
     int a, b;
     a = b = 0;
