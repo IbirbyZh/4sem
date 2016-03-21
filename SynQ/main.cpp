@@ -11,57 +11,108 @@
 #include <vector>
 #include <thread>
 #include <list>
+#include <numeric>
 
-void sort(SynQ<std::list<std::vector<int>>>& input,
-          SynQ<std::list<std::vector<int>>>& conveyor,
-          SynQ<std::list<std::pair<int, int>>>& output)
+const int MAX_PAGE = 100;
+const int TOTAL_PAGES = 1000000;
+
+void readOrWait(SynQ<std::list<int>>& input,
+                const int totalPages, int& total)
 {
-    int id = std::hash<std::thread::id>()(std::this_thread::get_id()) / 1;
-    for(int i = 0;true;++i){
-        std::vector<int> array;
-        if (!input.popOrWait(array)){
+    total = 0;
+    for(int i = 0; i < totalPages; ++i){
+        int e;
+        if (!input.popOrWait(e)){
             return;
         }
-        std::sort(array.begin(), array.end());
-        output.push(std::make_pair(id, i));
-        array.clear();
-        conveyor.push(std::move(array));
+        total += e;
+    }
+}
+
+void readNoWait(SynQ<std::list<int>>& input,
+                const int totalPages, int& total)
+{
+    total = 0;
+    for(int i = 0; i < totalPages;){
+        int e;
+        if (!input.popNoWait(e)){
+            continue;
+        }
+        total += e;
+        ++i;
+    }
+}
+
+void writem(SynQ<std::list<int>>& input,
+           const int totalPages, int& total)
+{
+    total = 0;
+    for(int i = 0; i < totalPages; ++i){
+        int e = rand() % MAX_PAGE;
+        total += e;
+        input.push(std::move(e));
+    }
+}
+
+void test(int readersCount, int writersCount){
+    SynQ<std::list<int>> input;
+    std::vector<std::thread*> myWriters(writersCount);
+    std::vector<std::thread*> myWait(readersCount);
+    std::vector<std::thread*> myNoWait(readersCount);
+    int ukW, ukWait, ukNoWait, i;
+    std::vector<int> totalW(writersCount), totalWait(readersCount), totalNoWait(readersCount);
+    ukW = ukWait = ukNoWait = 0;
+    for(i = 0; i < std::min(readersCount, writersCount); ++i){
+        myWriters[ukW] = new std::thread(writem, std::ref(input),
+                                         TOTAL_PAGES / writersCount, std::ref(totalW[ukW]));
+        ++ukW;
+        myWait[ukWait] = new std::thread(readOrWait, std::ref(input),
+                                         (TOTAL_PAGES / 2) / readersCount, std::ref(totalWait[ukWait]));
+        ++ukWait;
+        myNoWait[ukNoWait] = new std::thread(readNoWait, std::ref(input),
+                                         (TOTAL_PAGES / 2) / readersCount, std::ref(totalNoWait[ukNoWait]));
+        ++ukNoWait;
+    }
+    for(; i < writersCount; ++i){
+        myWriters[ukW] = new std::thread(writem, std::ref(input),
+                                         TOTAL_PAGES / writersCount, std::ref(totalW[ukW]));
+        ++ukW;
+    }
+    for(; i < readersCount; ++i){
+        myWait[ukWait] = new std::thread(readOrWait, std::ref(input),
+                                         (TOTAL_PAGES / 2) / readersCount, std::ref(totalWait[ukWait]));
+        ++ukWait;
+        myNoWait[ukNoWait] = new std::thread(readNoWait, std::ref(input),
+                                         (TOTAL_PAGES / 2) / readersCount, std::ref(totalNoWait[ukNoWait]));
+        ++ukNoWait;
+    }
+    for(i = 0; i < writersCount; ++i){
+        myWriters[i]->join();
+    }
+    input.finalize();
+    for(i = 0; i < readersCount; ++i){
+        myWait[i]->join();
+        myNoWait[i]->join();
+    }
+    int a, b;
+    a = b = 0;
+    std::accumulate(totalW.begin(), totalW.end(), a);
+    std::accumulate(totalWait.begin(), totalWait.end(), b);
+    std::accumulate(totalNoWait.begin(), totalNoWait.end(), b);
+    std::printf("writers: %2d, waitReaders: %2d, noWaitReaders: %2d ", readersCount, writersCount, writersCount);
+    if (a == b){
+        printf("OK\n");
+    }else{
+        printf("BAD\n");
     }
 }
 
 int main(int argc, const char * argv[]) {
-    freopen("input.txt", "r", stdin);
     freopen("output.txt", "w", stdout);
-    SynQ<std::list<std::vector<int>>> input, conveyor(4);
-    SynQ<std::list<std::pair<int, int>>> output;
-    int threadsCount = std::thread::hardware_concurrency() / 2;
-    std::vector<std::thread*> myThreads(threadsCount);
-    for(auto i = myThreads.begin(); i < myThreads.end(); ++i){
-        *i = new std::thread(sort,
-                             std::ref(input), std::ref(conveyor), std::ref(output));
-    }
-    int n;
-    scanf("%d", &n);
-    for (int i = 0; i < n; ++i){
-        int m;
-        scanf("%d", &m);
-        std::vector<int> array;
-        conveyor.popOrWait(array);
-        for(int j = 0; j < m; ++j){
-            int x;
-            scanf("%d", &x);
-            array.push_back(std::move(x));
-        }
-        input.push(std::move(array));
-    }
-    input.finalize();
-    for(int i = 0; i < n; ++i){
-        std::pair<int, int> ans;
-        output.popOrWait(ans);
-        printf("thread:%d count:%d\n", ans.first, ans.second);
-    }
-    for(auto i = myThreads.begin(); i < myThreads.end(); ++i){
-        (*i)->join();
-    }
+    test(4, 2);
+    test(1, 2);
+    test(8, 1);
+    test(16, 2);
+    test(1, 4);
     return 0;
 }

@@ -12,8 +12,10 @@
 #include <stdio.h>
 #include <mutex>
 #include <condition_variable>
-//можно изпользовать с std::deque, std::list
+#include <queue>
+#include <stack>
 
+//можно изпользовать с std::deque, std::list, std::vector
 template <class ARRAY>
 class SynQ {
 public:
@@ -27,13 +29,6 @@ public:
         mlock.unlock();
         _cond.notify_one();
     }
-    void push(const value_type& e)
-    {
-        std::unique_lock<std::mutex> mlock(_mutex);
-        queue.push_back(e);
-        mlock.unlock();
-        _cond.notify_one();
-    }
     int popOrWait(value_type& e)
     {
         std::unique_lock<std::mutex> mlock(_mutex);
@@ -43,9 +38,26 @@ public:
         if (queue.empty()){
             return 0;
         }
-        e = std::move(queue.front());
-        queue.pop_front();
+        e = std::move(queue.back());
+        queue.pop_back();
         return 1;
+    }
+    int popNoWait(value_type& e)
+    {
+        std::lock_guard<std::mutex> mlock(_mutex);
+        if (queue.empty()){
+            return 0;
+        }
+        e = std::move(queue.back());
+        queue.pop_back();
+        return 1;
+    }
+    void push(const value_type& e)
+    {
+        std::unique_lock<std::mutex> mlock(_mutex);
+        queue.push_back(e);
+        mlock.unlock();
+        _cond.notify_one();
     }
     void finalize()
     {

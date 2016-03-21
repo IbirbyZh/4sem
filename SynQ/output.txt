@@ -1,0 +1,5 @@
+writers:  4, waitReaders:  2, noWaitReaders:  2 OK
+writers:  1, waitReaders:  2, noWaitReaders:  2 OK
+writers:  8, waitReaders:  1, noWaitReaders:  1 OK
+writers: 16, waitReaders:  2, noWaitReaders:  2 OK
+writers:  1, waitReaders:  4, noWaitReaders:  4 OK
