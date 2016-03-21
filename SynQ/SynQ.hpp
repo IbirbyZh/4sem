@@ -12,8 +12,6 @@
 #include <stdio.h>
 #include <mutex>
 #include <condition_variable>
-#include <queue>
-#include <stack>
 
 //можно изпользовать с std::deque, std::list, std::vector
 template <class ARRAY>
