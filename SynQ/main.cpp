@@ -15,8 +15,8 @@
 
 const int MAX_PAGE = 100;
 const int TOTAL_PAGES = 1000000;
-
-void readOrWait(SynQ<std::list<int>>& input,
+template<class Array>
+void readOrWait(SynQ<Array>& input,
                 const int totalPages, int& total)
 {
     total = 0;
@@ -28,8 +28,8 @@ void readOrWait(SynQ<std::list<int>>& input,
         total += e;
     }
 }
-
-void readNoWait(SynQ<std::list<int>>& input,
+template<class Array>
+void readNoWait(SynQ<Array>& input,
                 const int totalPages, int& total)
 {
     total = 0;
@@ -42,8 +42,8 @@ void readNoWait(SynQ<std::list<int>>& input,
         ++i;
     }
 }
-
-void writem(SynQ<std::list<int>>& input,
+template<class Array>
+void writem(SynQ<Array>& input,
            const int totalPages, int& total)
 {
     total = 0;
@@ -53,9 +53,9 @@ void writem(SynQ<std::list<int>>& input,
         input.push(std::move(e));
     }
 }
-
+template<class Array>
 void test(int readersCount, int writersCount){
-    SynQ<std::list<int>> input;
+    SynQ<Array> input;
     std::vector<std::thread*> myWriters(writersCount);
     std::vector<std::thread*> myWait(readersCount);
     std::vector<std::thread*> myNoWait(readersCount);
@@ -63,26 +63,26 @@ void test(int readersCount, int writersCount){
     std::vector<int> totalW(writersCount), totalWait(readersCount), totalNoWait(readersCount);
     ukW = ukWait = ukNoWait = 0;
     for(i = 0; i < std::min(readersCount, writersCount); ++i){
-        myWriters[ukW] = new std::thread(writem, std::ref(input),
+        myWriters[ukW] = new std::thread(writem<Array>, std::ref(input),
                                          TOTAL_PAGES / writersCount, std::ref(totalW[ukW]));
         ++ukW;
-        myWait[ukWait] = new std::thread(readOrWait, std::ref(input),
+        myWait[ukWait] = new std::thread(readOrWait<Array>, std::ref(input),
                                          (TOTAL_PAGES / 2) / readersCount, std::ref(totalWait[ukWait]));
         ++ukWait;
-        myNoWait[ukNoWait] = new std::thread(readNoWait, std::ref(input),
+        myNoWait[ukNoWait] = new std::thread(readNoWait<Array>, std::ref(input),
                                          (TOTAL_PAGES / 2) / readersCount, std::ref(totalNoWait[ukNoWait]));
         ++ukNoWait;
     }
     for(; i < writersCount; ++i){
-        myWriters[ukW] = new std::thread(writem, std::ref(input),
+        myWriters[ukW] = new std::thread(writem<Array>, std::ref(input),
                                          TOTAL_PAGES / writersCount, std::ref(totalW[ukW]));
         ++ukW;
     }
     for(; i < readersCount; ++i){
-        myWait[ukWait] = new std::thread(readOrWait, std::ref(input),
+        myWait[ukWait] = new std::thread(readOrWait<Array>, std::ref(input),
                                          (TOTAL_PAGES / 2) / readersCount, std::ref(totalWait[ukWait]));
         ++ukWait;
-        myNoWait[ukNoWait] = new std::thread(readNoWait, std::ref(input),
+        myNoWait[ukNoWait] = new std::thread(readNoWait<Array>, std::ref(input),
                                          (TOTAL_PAGES / 2) / readersCount, std::ref(totalNoWait[ukNoWait]));
         ++ukNoWait;
     }
@@ -112,10 +112,35 @@ void test(int readersCount, int writersCount){
 
 int main(int argc, const char * argv[]) {
     freopen("output.txt", "w", stdout);
-    test(4, 2);
-    test(1, 2);
-    test(8, 1);
-    test(16, 2);
-    test(1, 4);
+    printf("\nlist\n");
+    test<std::list<int>>(4, 2);
+    test<std::list<int>>(1, 2);
+    test<std::list<int>>(8, 1);
+    test<std::list<int>>(16, 2);
+    test<std::list<int>>(1, 4);
+    printf("\ndeque\n");
+    test<std::deque<int>>(4, 2);
+    test<std::deque<int>>(1, 2);
+    test<std::deque<int>>(8, 1);
+    test<std::deque<int>>(16, 2);
+    test<std::deque<int>>(1, 4);
+    printf("\nvector\n");
+    test<std::vector<int>>(4, 2);
+    test<std::vector<int>>(1, 2);
+    test<std::vector<int>>(8, 1);
+    test<std::vector<int>>(16, 2);
+    test<std::vector<int>>(1, 4);
+    printf("\nstack\n");
+    test<std::stack<int>>(4, 2);
+    test<std::stack<int>>(1, 2);
+    test<std::stack<int>>(8, 1);
+    test<std::stack<int>>(16, 2);
+    test<std::stack<int>>(1, 4);
+    printf("\nqueue\n");
+    test<std::queue<int>>(4, 2);
+    test<std::queue<int>>(1, 2);
+    test<std::queue<int>>(8, 1);
+    test<std::queue<int>>(16, 2);
+    test<std::queue<int>>(1, 4);
     return 0;
 }
