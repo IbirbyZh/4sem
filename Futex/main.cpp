@@ -27,8 +27,8 @@ int name(int &mySum, Futex& f)
             break;
         }
         ++ans;
-        ++mySum;
         f.unlock();
+        ++mySum;
     }
     return 0;
 }
@@ -42,8 +42,8 @@ int nameM(int &mySum, std::mutex& f)
             break;
         }
         ++ans;
-        ++mySum;
         f.unlock();
+        ++mySum;
     }
     return 0;
 }
@@ -105,7 +105,7 @@ int main(int argc, const char * argv[]) {
     num.push_back(std::thread::hardware_concurrency() * 2);
     std::vector<char> c;
     c.push_back('f');
-    c.push_back('m');
+    //c.push_back('m');
     for(int i = 0; i < c.size(); ++i){
         for(int j = 0; j < num.size(); ++j){
             test(c[i], num[j]);
