@@ -38,7 +38,7 @@ int main(int argc, const char * argv[]) {
     end = std::chrono::system_clock::now();
     double l = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count()
     / static_cast<double>(1000);
-    std::cout << "with    Pin-pong " << l << '\n';
+    std::cout << "without Pin-pong " << l << '\n';
     start = std::chrono::system_clock::now();
     std::thread c(test<0>), d(test<64>);
     c.join();
@@ -46,7 +46,7 @@ int main(int argc, const char * argv[]) {
     end = std::chrono::system_clock::now();
     l = std::chrono::duration_cast<std::chrono::milliseconds>(end-start).count()
     / static_cast<double>(1000);
-    std::cout << "without Pin-pong " << l << '\n';
+    std::cout << "with    Pin-pong " << l << '\n';
     std::cerr <<data.m[0] <<data.m[1] <<data.m[64];
     return 0;
 }
