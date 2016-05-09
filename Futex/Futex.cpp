@@ -20,7 +20,7 @@ bool Futex::lock()
     std::thread::id id = std::this_thread::get_id();
     int a = std::hash<std::thread::id>()(id) / 1;
     int f = -1;
-    while (!ownerId.compare_exchange_strong(f, a)){
+    while (!ownerId.compare_exchange_weak(f, a, std::memory_order_relaxed)){
         f = -1;
     }
     return true;
@@ -31,7 +31,7 @@ bool Futex::unlock()
     std::thread::id id = std::this_thread::get_id();
     int a = std::hash<std::thread::id>()(id) / 1;
     int f = a;
-    if (!ownerId.compare_exchange_strong(f, -1)){
+    if (!ownerId.compare_exchange_weak(f, -1, std::memory_order_relaxed)){
         assert("Ошибка");
     }
     return true;
